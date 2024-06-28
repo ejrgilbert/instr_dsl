@@ -4,7 +4,8 @@ use cli::{Cmd, WhammCli};
 
 use crate::behavior::builder_visitor::*;
 use crate::common::error::ErrorGen;
-use crate::generator::emitters::{Emitter, WasmRewritingEmitter};
+use crate::emitter::Emitter;
+use crate::emitter::rewriting::WasmRewritingEmitter;
 use crate::generator::init_generator::InitGenerator;
 use crate::generator::instr_generator::InstrGenerator;
 use crate::parser::whamm_parser::*;
@@ -13,6 +14,7 @@ pub mod behavior;
 mod cli;
 pub mod common;
 pub mod generator;
+pub mod emitter;
 pub mod parser;
 pub mod verifier;
 
@@ -86,6 +88,13 @@ fn try_main() -> Result<(), failure::Error> {
     Ok(())
 }
 
+/// create output path if it doesn't exist
+fn try_path(path: &String) {
+    if !PathBuf::from(path).exists() {
+        std::fs::create_dir_all(PathBuf::from(path).parent().unwrap()).unwrap();
+    }
+}
+
 fn run_info(spec: String, print_globals: bool, print_functions: bool) {
     // Parse the script and generate the information
     let mut err = ErrorGen::new("".to_string(), spec.clone(), MAX_ERRORS);
@@ -156,11 +165,7 @@ fn run_instr(
     // If there were any errors encountered, report and exit!
     err.check_has_errors();
 
-    // create output path if it doesn't exist
-    if !PathBuf::from(&output_wasm_path).exists() {
-        std::fs::create_dir_all(PathBuf::from(&output_wasm_path).parent().unwrap()).unwrap();
-    }
-
+    try_path(&output_wasm_path);
     if let Err(e) = emitter.dump_to_file(output_wasm_path) {
         err.add_error(*e)
     }
@@ -173,10 +178,7 @@ fn run_vis_wasm(wasm_path: String, output_path: String) {
     let _config = walrus::ModuleConfig::new();
     let app_wasm = Module::from_file(wasm_path).unwrap();
 
-    if !PathBuf::from(&output_path).exists() {
-        std::fs::create_dir_all(PathBuf::from(&output_path).parent().unwrap()).unwrap();
-    }
-
+    try_path(&output_path);
     if app_wasm.write_graphviz_dot(output_path.clone()).is_ok() {
         match std::fs::read_to_string(output_path.clone()) {
             Ok(dot_str) => {

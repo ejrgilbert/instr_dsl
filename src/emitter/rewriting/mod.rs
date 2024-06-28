@@ -1,3 +1,5 @@
+mod rules;
+
 use crate::common::error::{ErrorGen, WhammError};
 use crate::generator::types::ExprFolder;
 use crate::parser::types::{BinOp, DataType, Expr, Fn, Statement, UnOp, Value};
@@ -9,65 +11,7 @@ use walrus::{
     ActiveData, ActiveDataLocation, DataKind, FunctionBuilder, FunctionId, FunctionKind,
     ImportedFunction, InitExpr, InstrSeqBuilder, LocalFunction, MemoryId, ModuleData, ValType,
 };
-
-// =================================================
-// ==== Emitter Trait --> Used By All Emitters! ====
-// =================================================
-
-pub trait Emitter {
-    fn enter_scope(&mut self) -> Result<(), Box<WhammError>>;
-    fn enter_named_scope(&mut self, scope_name: &str) -> bool;
-    fn exit_scope(&mut self) -> Result<(), Box<WhammError>>;
-    fn reset_children(&mut self);
-
-    fn init_instr_iter(&mut self, instrs_of_interest: &[String]) -> Result<(), Box<WhammError>>;
-    fn has_next_instr(&self) -> bool;
-    fn init_first_instr(&mut self) -> bool;
-    fn next_instr(&mut self) -> bool;
-    fn curr_instr_is_of_type(&mut self, instr_names: &[String]) -> bool;
-    fn curr_instr_type(&mut self) -> String;
-    fn incr_loc_pointer(&mut self);
-
-    fn has_params(&mut self) -> Result<bool, Box<WhammError>>;
-    fn save_params(&mut self) -> bool;
-    fn emit_params(&mut self) -> Result<bool, Box<WhammError>>;
-    fn define_compiler_var(
-        &mut self,
-        context: &str,
-        var_name: &str,
-    ) -> Result<bool, Box<WhammError>>;
-    // fn emit_event(&mut self, context: &str, event: &mut Event) -> bool;
-    fn fold_expr(&mut self, expr: &mut Expr) -> bool;
-    fn emit_expr(&mut self, expr: &mut Expr) -> Result<bool, Box<WhammError>>;
-
-    fn emit_fn(&mut self, context_name: &str, f: &Fn) -> Result<bool, Box<WhammError>>;
-    fn emit_formal_param(&mut self, param: &(Expr, DataType)) -> bool;
-    fn emit_global(
-        &mut self,
-        name: String,
-        ty: DataType,
-        val: &Option<Value>,
-    ) -> Result<bool, Box<WhammError>>;
-    fn remove_orig(&mut self) -> bool;
-    fn emit_orig(&mut self) -> bool;
-    fn emit_if(&mut self) -> bool;
-    fn emit_if_else(&mut self) -> bool;
-    /// Will configure the emitter to emit subsequent expression as the condition of an if or if/else stmt
-    fn emit_condition(&mut self) -> bool;
-    /// Will configure the emitter to emit subsequent statements into the consequent body of an if or if/else stmt
-    fn emit_consequent(&mut self) -> bool;
-    /// Will configure the emitter to emit subsequent statements into the alternate body of an if/else stmt
-    fn emit_alternate(&mut self) -> bool;
-    /// Will configure the emitter to emit subsequent statements in the outer block of some branching logic
-    fn finish_branch(&mut self) -> bool;
-    fn emit_global_stmts(&mut self, stmts: &mut Vec<Statement>) -> Result<bool, Box<WhammError>>;
-    fn emit_body(&mut self, body: &mut Vec<Statement>) -> Result<bool, Box<WhammError>>;
-    fn has_alt_call(&mut self) -> bool; // TODO -- remove need for this
-    fn emit_alt_call(&mut self) -> Result<bool, Box<WhammError>>; // TODO -- remove need for this
-    fn emit_stmt(&mut self, stmt: &mut Statement) -> Result<bool, Box<WhammError>>;
-
-    fn dump_to_file(&mut self, output_wasm_path: String) -> Result<bool, Box<WhammError>>;
-}
+use crate::emitter::Emitter;
 
 // =================================================================================
 // ================ WasmRewritingEmitter - HELPER FUNCTIONS ========================
@@ -136,7 +80,7 @@ fn emit_set(
                     },
                     None => {
                         return Err(Box::new(ErrorGen::get_type_check_error_from_loc(false,
-                           format!("Variable assigned before declared: {}", name), loc)));
+                                                                                    format!("Variable assigned before declared: {}", name), loc)));
                     }
                 }
                 Ok(true)
@@ -592,9 +536,9 @@ fn emit_value(
 fn get_func_info(app_wasm: &walrus::Module, func: &walrus::Function) -> (FuncInfo, Vec<ValType>) {
     match &func.kind {
         FunctionKind::Import(ImportedFunction {
-            ty: ty_id,
-            import: import_id,
-        }) => {
+                                 ty: ty_id,
+                                 import: import_id,
+                             }) => {
             let import = app_wasm.imports.get(*import_id);
             let ty = app_wasm.types.get(*ty_id);
 
@@ -817,7 +761,6 @@ struct FuncInfo {
     module: String,
     name: String,
 }
-
 struct EmittingInstrTracker {
     // To keep track of the location of the original instruction while we're instrumenting!
     orig_instr_idx: usize,
@@ -1296,10 +1239,10 @@ impl WasmRewritingEmitter {
                     };
                     match self.table.get_record_mut(&var_rec_id) {
                         Some(Record::Var {
-                            value,
-                            is_comp_provided,
-                            ..
-                        }) => {
+                                 value,
+                                 is_comp_provided,
+                                 ..
+                             }) => {
                             *value = Some(val.clone());
 
                             if *is_comp_provided {
@@ -1431,7 +1374,7 @@ impl Emitter for WasmRewritingEmitter {
         }
         false
     }
-
+    
     /// bool -> whether it found a next instruction
     fn next_instr(&mut self) -> bool {
         if self.instr_iter.has_next() {
@@ -1568,9 +1511,9 @@ impl Emitter for WasmRewritingEmitter {
                 for (_param_name, param_rec_id) in curr_loc.instr_created_args.iter() {
                     let param_rec = self.table.get_record_mut(param_rec_id);
                     if let Some(Record::Var {
-                        addr: Some(VarAddr::Local { addr }),
-                        ..
-                    }) = param_rec
+                                    addr: Some(VarAddr::Local { addr }),
+                                    ..
+                                }) = param_rec
                     {
                         // Inject at tracker.orig_instr_idx to make sure that this actually emits the params
                         // for the instrumented instruction right before that instruction is called!
@@ -1681,7 +1624,7 @@ impl Emitter for WasmRewritingEmitter {
                             &mut tracker.curr_idx,
                         )?;
                     } else {
-                        // have an error at this place when for 3 calls
+                        // errors here when instrumenting 3 calls
                         return Err(Box::new(ErrorGen::get_unexpected_error(
                             true,
                             Some(format!(
@@ -2061,9 +2004,9 @@ impl Emitter for WasmRewritingEmitter {
                 Some(r_id) => {
                     let rec = self.table.get_record_mut(&r_id);
                     if let Some(Record::Var {
-                        value: Some(Value::Str { val, .. }),
-                        ..
-                    }) = rec
+                                    value: Some(Value::Str { val, .. }),
+                                    ..
+                                }) = rec
                     {
                         (val.clone(), self.app_wasm.funcs.by_name(val))
                     } else {
@@ -2130,12 +2073,6 @@ impl Emitter for WasmRewritingEmitter {
             Statement::Assign { .. } => self.emit_assign_stmt(stmt),
             Statement::Expr { expr, .. } => self.emit_expr(expr),
             Statement::Return { .. } => unimplemented!(),
-            Statement::If {
-                // cond, conseq, alt, .. -- for eventual implimentation
-                ..
-            } => {
-                unimplemented!()
-            }
         }
     }
 
