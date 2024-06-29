@@ -4,8 +4,8 @@ use cli::{Cmd, WhammCli};
 
 use crate::behavior::builder_visitor::*;
 use crate::common::error::ErrorGen;
-use crate::emitter::Emitter;
 use crate::emitter::rewriting::WasmRewritingEmitter;
+use crate::emitter::Emitter;
 use crate::generator::init_generator::InitGenerator;
 use crate::generator::instr_generator::InstrGenerator;
 use crate::parser::whamm_parser::*;
@@ -13,8 +13,8 @@ use crate::parser::whamm_parser::*;
 pub mod behavior;
 mod cli;
 pub mod common;
-pub mod generator;
 pub mod emitter;
+pub mod generator;
 pub mod parser;
 pub mod verifier;
 

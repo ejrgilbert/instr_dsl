@@ -1,12 +1,12 @@
-use std::collections::HashMap;
-use walrus::ir::Instr;
-use walrus::ValType;
 use crate::parser::rules::{Probe, WhammProviderKind};
 use crate::parser::types::Script;
 use crate::verifier::types::Record;
+use std::collections::HashMap;
+use walrus::ir::Instr;
+use walrus::ValType;
 
-pub mod wasm;
 mod core;
+pub mod wasm;
 
 /// A function that can be used to generate these emitter rule types
 /// from the parser AST.
@@ -20,13 +20,12 @@ pub struct LocInfo<'a> {
     /// dynamic information corresponding to the operands of this location
     dynamic_data: Vec<ValType>,
     /// the probes that were matched for this instruction
-    probes: Vec<&'a dyn Probe>
+    probes: Vec<&'a dyn Probe>,
 }
 
 pub trait ProcessLoc {
     /// Pass some location to the provider and get back two types of data:
-    fn get_loc_info(&self, app_wasm: &walrus::Module, instr: &Instr, instr_name: &str)
-        -> LocInfo;
+    fn get_loc_info(&self, app_wasm: &walrus::Module, instr: &Instr, instr_name: &str) -> LocInfo;
 }
 
 pub trait Provider {}
@@ -40,12 +39,16 @@ pub struct WhammProvider {
 }
 impl Provider for WhammProvider {}
 impl ProcessLoc for WhammProvider {
-    fn get_loc_info(&self, _app_wasm: &walrus::Module, _instr: &Instr, _instr_name: &str)
-        -> LocInfo {
+    fn get_loc_info(
+        &self,
+        _app_wasm: &walrus::Module,
+        _instr: &Instr,
+        _instr_name: &str,
+    ) -> LocInfo {
         match self.kind {
             WhammProviderKind::Core => {
                 todo!()
-            },
+            }
             WhammProviderKind::Wasm => {
                 todo!()
             }

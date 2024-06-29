@@ -1,6 +1,7 @@
 mod rules;
 
 use crate::common::error::{ErrorGen, WhammError};
+use crate::emitter::Emitter;
 use crate::generator::types::ExprFolder;
 use crate::parser::types::{BinOp, DataType, Expr, Fn, Statement, UnOp, Value};
 use crate::verifier::types::{Record, SymbolTable, VarAddr};
@@ -11,7 +12,6 @@ use walrus::{
     ActiveData, ActiveDataLocation, DataKind, FunctionBuilder, FunctionId, FunctionKind,
     ImportedFunction, InitExpr, InstrSeqBuilder, LocalFunction, MemoryId, ModuleData, ValType,
 };
-use crate::emitter::Emitter;
 
 // =================================================================================
 // ================ WasmRewritingEmitter - HELPER FUNCTIONS ========================
@@ -536,9 +536,9 @@ fn emit_value(
 fn get_func_info(app_wasm: &walrus::Module, func: &walrus::Function) -> (FuncInfo, Vec<ValType>) {
     match &func.kind {
         FunctionKind::Import(ImportedFunction {
-                                 ty: ty_id,
-                                 import: import_id,
-                             }) => {
+            ty: ty_id,
+            import: import_id,
+        }) => {
             let import = app_wasm.imports.get(*import_id);
             let ty = app_wasm.types.get(*ty_id);
 
@@ -1239,10 +1239,10 @@ impl WasmRewritingEmitter {
                     };
                     match self.table.get_record_mut(&var_rec_id) {
                         Some(Record::Var {
-                                 value,
-                                 is_comp_provided,
-                                 ..
-                             }) => {
+                            value,
+                            is_comp_provided,
+                            ..
+                        }) => {
                             *value = Some(val.clone());
 
                             if *is_comp_provided {
@@ -1374,7 +1374,7 @@ impl Emitter for WasmRewritingEmitter {
         }
         false
     }
-    
+
     /// bool -> whether it found a next instruction
     fn next_instr(&mut self) -> bool {
         if self.instr_iter.has_next() {
@@ -1511,9 +1511,9 @@ impl Emitter for WasmRewritingEmitter {
                 for (_param_name, param_rec_id) in curr_loc.instr_created_args.iter() {
                     let param_rec = self.table.get_record_mut(param_rec_id);
                     if let Some(Record::Var {
-                                    addr: Some(VarAddr::Local { addr }),
-                                    ..
-                                }) = param_rec
+                        addr: Some(VarAddr::Local { addr }),
+                        ..
+                    }) = param_rec
                     {
                         // Inject at tracker.orig_instr_idx to make sure that this actually emits the params
                         // for the instrumented instruction right before that instruction is called!
@@ -2004,9 +2004,9 @@ impl Emitter for WasmRewritingEmitter {
                 Some(r_id) => {
                     let rec = self.table.get_record_mut(&r_id);
                     if let Some(Record::Var {
-                                    value: Some(Value::Str { val, .. }),
-                                    ..
-                                }) = rec
+                        value: Some(Value::Str { val, .. }),
+                        ..
+                    }) = rec
                     {
                         (val.clone(), self.app_wasm.funcs.by_name(val))
                     } else {
