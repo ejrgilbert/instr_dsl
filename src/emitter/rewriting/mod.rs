@@ -2073,6 +2073,7 @@ impl Emitter for WasmRewritingEmitter {
             Statement::Assign { .. } => self.emit_assign_stmt(stmt),
             Statement::Expr { expr, .. } => self.emit_expr(expr),
             Statement::Return { .. } => unimplemented!(),
+            Statement::If { .. } => unimplemented!(),
         }
     }
 

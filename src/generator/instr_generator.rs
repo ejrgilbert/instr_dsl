@@ -4,7 +4,7 @@ use crate::behavior::tree::{
 };
 use crate::behavior::tree::{BehaviorTree, Node};
 use crate::common::error::ErrorGen;
-use crate::generator::emitters::Emitter;
+use crate::emitter::Emitter;
 use crate::generator::types::ExprFolder;
 use crate::parser::types::{Expr, Statement};
 use convert_case::{Case, Casing};

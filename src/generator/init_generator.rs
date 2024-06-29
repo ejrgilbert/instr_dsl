@@ -3,7 +3,7 @@
 // =======================
 
 use crate::common::error::ErrorGen;
-use crate::generator::emitters::Emitter;
+use crate::emitter::Emitter;
 use crate::parser::rules::{Event, Package, Probe, Provider};
 use crate::parser::types::{
     BinOp, Block, DataType, Expr, Global, ProvidedFunction, ProvidedGlobal, Script, Statement,
