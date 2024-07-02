@@ -33,6 +33,11 @@ jobs:
         binaryName: wasm2wat
         binaryUrl: https://github.com/WebAssembly/wabt/releases/download/1.0.34/wabt-1.0.34-ubuntu.tar.gz
         binaryPathInArchive: wabt-1.0.34/bin/wasm2wat
+    - name: Build Orca
+      run: |
+        cd .. && git clone https://github.com/thesuhas/orca.git
+        cd orca
+        cargo build
     - name: Build
       run: |
         rustup target add wasm32-unknown-unknown

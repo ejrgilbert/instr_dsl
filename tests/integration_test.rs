@@ -1,6 +1,7 @@
 mod common;
 
 use log::error;
+use orca::ir::Module as WasmModule;
 use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -16,12 +17,6 @@ const APP_WASM_PATH: &str = "tests/apps/dfinity/users.wasm";
 
 const OUT_BASE_DIR: &str = "target";
 const OUT_WASM_NAME: &str = "out.wasm";
-
-fn get_wasm_module() -> Module {
-    // Read app Wasm into Walrus module
-    let _config = walrus::ModuleConfig::new();
-    Module::from_file(APP_WASM_PATH).unwrap()
-}
 
 /// This test just confirms that a wasm module can be instrumented with the preconfigured
 /// scripts without errors occurring.
@@ -39,7 +34,10 @@ fn instrument_dfinity_with_fault_injection() {
         let mut behavior = build_behavior_tree(&whamm, &mut simple_ast, &mut err);
         behavior.reset();
 
-        let app_wasm = get_wasm_module();
+        let buff = std::fs::read(APP_WASM_PATH).unwrap();
+        let app_wasm =
+            WasmModule::parse_only_module(&buff, false).expect("Failed to parse Wasm module");
+
         let mut err = ErrorGen::new(script_path.clone(), script_text, 0);
         let mut emitter = WasmRewritingEmitter::new(app_wasm, symbol_table);
         // Phase 0 of instrumentation (emit globals and provided fns)
